@@ -13,10 +13,6 @@ venv/
 data/raw/
 data/processed/
 
-# Ignore trained models
-models/*.pkl
-models/*.json
-
 # OS files
 .DS_Store
 Thumbs.db
