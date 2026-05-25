@@ -240,14 +240,19 @@ if st.button("🔍 Predict Sentiment"):
         if prediction:
 
             # Convert probabilities to %
-            p_neg = (
-                probabilities[0] * 100
-            )
-
             p_pos = (
-                probabilities[1] * 100
+                probabilities.get(
+                    "positive",
+                    0
+                ) * 100
             )
 
+            p_neg = (
+                probabilities.get(
+                    "negative",
+                    0
+                ) * 100
+            )
             emoji = (
                 "😊"
                 if prediction.lower()

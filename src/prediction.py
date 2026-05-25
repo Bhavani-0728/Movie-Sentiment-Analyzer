@@ -1,5 +1,7 @@
 """
 prediction.py
+
+Handles sentiment prediction.
 """
 
 import joblib
@@ -9,6 +11,10 @@ from src.text_cleaning import (
     clean_text
 )
 
+
+# --------------------------------------------------
+# MODEL PATHS
+# --------------------------------------------------
 
 MODEL_PATH = (
     "models/"
@@ -26,9 +32,14 @@ ENCODER_PATH = (
 )
 
 
+# --------------------------------------------------
+# LOAD ARTIFACTS
+# --------------------------------------------------
+
 def load_artifacts():
     """
-    Load saved files.
+    Load trained model,
+    vectorizer, and label encoder.
     """
 
     model = joblib.load(
@@ -50,77 +61,86 @@ def load_artifacts():
     )
 
 
-def predict_sentiment(
-    review
-):
+# --------------------------------------------------
+# PREDICTION FUNCTION
+# --------------------------------------------------
+
+def predict_sentiment(review):
     """
-    Predict sentiment.
+    Predict movie review sentiment.
+
+    Args:
+        review (str)
+
+    Returns:
+        tuple:
+        (
+            label,
+            confidence,
+            probability_dict
+        )
     """
 
     try:
 
+        # Load model files
         (
             model,
             vectorizer,
             encoder
         ) = load_artifacts()
 
-        # Clean text
+        # Clean review text
         cleaned_review = (
             clean_text(review)
         )
 
+        # Convert to vector
         transformed_review = (
             vectorizer.transform(
                 [cleaned_review]
             )
         )
 
+        # Predict encoded label
         prediction = (
             model.predict(
                 transformed_review
             )[0]
         )
 
+        # Predict probabilities
         probabilities = (
             model.predict_proba(
                 transformed_review
             )[0]
         )
 
+        # Confidence score
         confidence = (
             np.max(
                 probabilities
             ) * 100
         )
 
-        # Smart confidence calibration
-        neutral_words = [
-            "okay",
-            "fine",
-            "average",
-            "decent",
-            "slightly",
-            "but"
-        ]
-
-        if any(
-            word in cleaned_review
-            for word in neutral_words
-        ):
-            confidence *= 0.82
-
-        elif confidence > 95:
-            confidence -= 10
-
-        elif confidence > 90:
-            confidence -= 5
-
+        # Decode prediction
         label = (
             encoder
             .inverse_transform(
                 [prediction]
             )[0]
+        )
+
+        # Map probabilities
+        class_labels = (
+            encoder.classes_
+        )
+
+        probability_dict = dict(
+            zip(
+                class_labels,
+                probabilities
+            )
         )
 
         return (
@@ -129,7 +149,7 @@ def predict_sentiment(
                 confidence,
                 2
             ),
-            probabilities
+            probability_dict
         )
 
     except Exception as error:
@@ -144,3 +164,22 @@ def predict_sentiment(
             None,
             None
         )
+
+
+# --------------------------------------------------
+# TESTING
+# --------------------------------------------------
+
+if __name__ == "__main__":
+
+    sample_review = (
+        "This movie was amazing!"
+    )
+
+    result = (
+        predict_sentiment(
+            sample_review
+        )
+    )
+
+    print(result)
